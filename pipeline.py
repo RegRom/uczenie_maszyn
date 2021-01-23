@@ -7,6 +7,9 @@ from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import balanced_accuracy_score
+
+skf = StratifiedKFold(n_splits=5, random_state=444)
 
 # %%
 
@@ -49,11 +52,31 @@ datasets_list['generated5'] = pd.read_csv('datasets\\15_features_0.009_0.991.csv
 # prep.change_labels_to_numeric('datasets\\yeast3.csv')
 
 # %%
+# Funkcja przeprowadzająca eksperyment dla danego zbioru danych i klasyfikatora
+# Zwraca wynik balanced_accuracy_score dla uśrednionego wyniku ze wszystkich foldów
 
-print(datasets_list.keys())
+def make_experiment_for_dataset(X, y, clf):
+    scores = []
+    for train_index, test_index in skf.split(X, y):
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
 
-X, y = prep.data_label_split(datasets_list['yeast3.csv'].to_numpy())
-print(X)
+        y_pred = clf.fit(X_train, y_train).predict(X_test)
+        scores.append(balanced_accuracy_score(y_test, y_pred))
+    
+    return np.mean(scores)
+
 
 # %%
 
+
+
+# %%
+
+X, y = prep.data_label_split(datasets_list['yeast3.csv'].to_numpy())
+
+svc = SVC(random_state=444)
+
+score = make_experiment_for_dataset(X, y, svc)
+print(score)
+# %%
