@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from pandas.core.frame import DataFrame
 import data_preparation as prep
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
@@ -31,8 +32,8 @@ datasets = ['yeast3.csv',
     'glass1.csv',
     'glass-0-1-6_vs_2.csv',
     'ecoli3.csv',
-    'abalone19.csv',
-    'abalone9-18.csv'
+    # 'abalone19.csv',
+    # 'abalone9-18.csv'
 ]
 # Zamiana etykiet tekstowych na liczbowe
 # prep.change_label_for_dataset_batch('datasets\\', datasets)
@@ -68,8 +69,22 @@ def make_experiment_for_dataset(X, y, clf):
 
 
 # %%
+# Funkcja wykonująca eksperyment dla listy zbiorów danych. Zwraca listę wyników balanced_accuracy_score dla każdego zbioru danych
 
+def make_experiment_for_dataset_list(datasets, clf):
+    datasets_scores = []
 
+    for key, value in datasets.items():
+        if(type(value) is DataFrame):
+            X, y = prep.data_label_split(value.to_numpy())
+        else:
+            X, y = prep.data_label_split(value)
+        
+        score = make_experiment_for_dataset(X, y, clf)
+        datasets_scores.append(score)
+    
+    return datasets_scores
+        
 
 # %%
 
@@ -79,4 +94,11 @@ svc = SVC(random_state=444)
 
 score = make_experiment_for_dataset(X, y, svc)
 print(score)
+
+scores = make_experiment_for_dataset_list(datasets_list, svc)
+print(scores)
 # %%
+# TODO Zakodować tesktowe wartości z zbiorach abalone
+# Zrobić uczenie dla pozostałych klasyfikatorów
+# Zrobić ensemble z klasyfikatorów
+# Test statystyczne
