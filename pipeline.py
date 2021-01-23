@@ -2,27 +2,39 @@
 
 import numpy as np
 import pandas as pd
+import data_preparation as prep
 
 # %%
 
-datasets = ['datasets\\yeast3.csv', 
-    'datasets\\yeast-2_vs_8.csv', 
-    'datasets\\yeast-2_vs_4.csv',
-    'datasets\\yeast-0-5-6-7-9_vs_4.csv',
-    'datasets\\wisconsin.csv',
-    'datasets\\vehicle1.csv',
-    'datasets\\vehicle0.csv',
-    'datasets\\shuttle-c2-vs-c4.csv',
-    'datasets\\shuttle-c0-vs-c4.csv',
-    'datasets\\segment0.csv',
-    'datasets\\page-blocks0.csv',
-    'datasets\\new-thyroid1.csv',
-    'datasets\\iris0.csv',
-    'datasets\\haberman.csv',
-    'datasets\\glass6.csv',
-    'datasets\\glass1.csv',
-    'datasets\\glass-0-1-6_vs_2.csv',
-    'datasets\\ecoli3.csv',
-    'datasets\\abalone19.csv',
-    'datasets\\abalone9-18.csv'
+datasets = ['yeast3.csv', 
+    'yeast-2_vs_8.csv', 
+    'yeast-2_vs_4.csv',
+    'yeast-0-5-6-7-9_vs_4.csv',
+    'wisconsin.csv',
+    'vehicle1.csv',
+    'vehicle0.csv',
+    'shuttle-c2-vs-c4.csv',
+    'shuttle-c0-vs-c4.csv',
+    'segment0.csv',
+    'page-blocks0.csv',
+    'new-thyroid1.csv',
+    'iris0.csv',
+    'haberman.csv',
+    'glass6.csv',
+    'glass1.csv',
+    'glass-0-1-6_vs_2.csv',
+    'ecoli3.csv',
+    'abalone19.csv',
+    'abalone9-18.csv'
 ]
+# Zamiana etykiet tekstowych na liczbowe
+prep.change_label_for_dataset_batch('datasets\\', datasets)
+
+# Wczytanie przekształconych datasetów do słownika
+datasets_list = prep.load_datasets_batch('datasets\\', datasets)
+
+# %%
+
+print(datasets_list['yeast3.csv'])
+
+# %%
