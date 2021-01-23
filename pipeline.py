@@ -3,6 +3,10 @@
 import numpy as np
 import pandas as pd
 import data_preparation as prep
+from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.model_selection import StratifiedKFold
 
 # %%
 
@@ -36,12 +40,20 @@ datasets = ['yeast3.csv',
 datasets_list = prep.load_datasets_batch('datasets\\', datasets)
 
 # Dodanie wygenerowanych zbiorów danych do słownika
-datasets_list = 
+datasets_list['generated1'] = pd.read_csv('datasets\\11_features_0.035_0.965.csv')
+datasets_list['generated2'] = pd.read_csv('datasets\\12_features_0.02_0.98.csv')
+datasets_list['generated3'] = pd.read_csv('datasets\\13_features_0.014_0.986.csv')
+datasets_list['generated4'] = pd.read_csv('datasets\\14_features_0.011_0.989.csv')
+datasets_list['generated5'] = pd.read_csv('datasets\\15_features_0.009_0.991.csv')
 
 # prep.change_labels_to_numeric('datasets\\yeast3.csv')
 
 # %%
 
-print(datasets_list['yeast3.csv'])
+print(datasets_list.keys())
+
+X, y = prep.data_label_split(datasets_list['yeast3.csv'].to_numpy())
+print(X)
 
 # %%
+

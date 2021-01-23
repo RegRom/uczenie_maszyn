@@ -24,3 +24,9 @@ def load_datasets_batch(filepath, dataset_names):
         datasets_list[f'{dataset}'] = dataset_loaded
     
     return datasets_list
+
+def data_label_split(dataset):
+    X = dataset[:, :-1]
+    y = dataset[:, -1]
+
+    return X, y
