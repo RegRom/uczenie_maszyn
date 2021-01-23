@@ -93,7 +93,7 @@ def redundant_informative_split(n, redundant_ratio=0.2):
 def make_dataset_name(data_info):
     name = ""
     name += f"{data_info['n_features']}_features_"
-    name += f"{data_info['n_classes']}_classes_"
+    # name += f"{data_info['n_classes']}_classes_"
     balance_ratio = data_info.get("balance_ratio")
     if balance_ratio is None or balance_ratio[0] == 0:
         name += "balanced"

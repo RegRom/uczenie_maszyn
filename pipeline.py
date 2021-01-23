@@ -28,10 +28,17 @@ datasets = ['yeast3.csv',
     'abalone9-18.csv'
 ]
 # Zamiana etykiet tekstowych na liczbowe
-prep.change_label_for_dataset_batch('datasets\\', datasets)
+# prep.change_label_for_dataset_batch('datasets\\', datasets)
+
+# %%
 
 # Wczytanie przekształconych datasetów do słownika
 datasets_list = prep.load_datasets_batch('datasets\\', datasets)
+
+# Dodanie wygenerowanych zbiorów danych do słownika
+datasets_list = 
+
+# prep.change_labels_to_numeric('datasets\\yeast3.csv')
 
 # %%
 
