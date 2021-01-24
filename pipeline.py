@@ -9,6 +9,11 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import balanced_accuracy_score
+from tqdm import tqdm
+from sklearn.ensemble import VotingClassifier
+from scipy.stats import wilcoxon
+from tabulate import tabulate
+import math
 
 skf = StratifiedKFold(n_splits=5, random_state=444)
 
@@ -32,15 +37,18 @@ datasets = ['yeast3.csv',
     'glass1.csv',
     'glass-0-1-6_vs_2.csv',
     'ecoli3.csv',
-    # 'abalone19.csv',
-    # 'abalone9-18.csv'
+    'abalone19.csv',
+    'abalone9-18.csv'
 ]
+
+# %%
+
 # Zamiana etykiet tekstowych na liczbowe
 # prep.change_label_for_dataset_batch('datasets\\', datasets)
 
-# Zakodowanie kolumn z wartościami kategorycznymi jako liczbowe
-prep.label_encode_column('Sex', 'datasets\\abalone19.csv')
-prep.label_encode_column('Sex', 'datasets\\abalone9-18.csv')
+# # Zakodowanie kolumn z wartościami kategorycznymi jako liczbowe
+# prep.label_encode_column('Sex', 'datasets\\abalone19.csv')
+# prep.label_encode_column('Sex', 'datasets\\abalone9-18.csv')
 
 # %%
 
@@ -62,7 +70,7 @@ datasets_list['generated5'] = pd.read_csv('datasets\\15_features_0.009_0.991.csv
 
 def make_experiment_for_dataset(X, y, clf):
     scores = []
-    for train_index, test_index in skf.split(X, y):
+    for train_index, test_index in tqdm(skf.split(X, y)):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
@@ -78,7 +86,7 @@ def make_experiment_for_dataset(X, y, clf):
 def make_experiment_for_dataset_list(datasets, clf):
     datasets_scores = []
 
-    for key, value in datasets.items():
+    for key, value in tqdm(datasets.items()):
         if(type(value) is DataFrame):
             X, y = prep.data_label_split(value.to_numpy())
         else:
@@ -91,18 +99,69 @@ def make_experiment_for_dataset_list(datasets, clf):
         
 
 # %%
-
-X, y = prep.data_label_split(datasets_list['yeast3.csv'].to_numpy())
+# Utworzenie i wytrenowanie poszczególnych algorytmów
 
 svc = SVC(random_state=444)
+gpc = GaussianProcessClassifier(random_state=444)
+mlp = MLPClassifier(random_state=444)
 
-score = make_experiment_for_dataset(X, y, svc)
-print(score)
+scores_svc = make_experiment_for_dataset_list(datasets_list, svc)
+scores_gpc = make_experiment_for_dataset_list(datasets_list, gpc)
+scores_mlp = make_experiment_for_dataset_list(datasets_list, mlp)
 
-scores = make_experiment_for_dataset_list(datasets_list, svc)
-print(scores)
 # %%
-# TODO Zakodować tesktowe wartości z zbiorach abalone
-# Zrobić uczenie dla pozostałych klasyfikatorów
-# Zrobić ensemble z klasyfikatorów
-# Test statystyczne
+# Utworzenie i wytrenowanie komitetu klasyfikatorów z głosowaniem twardym
+
+ensemble = VotingClassifier(estimators=[('SVC', svc), ('GPC', gpc), ('MLP', mlp)], voting='hard')
+
+scores_ensemble = make_experiment_for_dataset_list(datasets_list, ensemble)
+
+# %%
+# Utworzenie i wytrenowanie komitetu klasyfikatorów z głosowaniem miękkim
+
+ensemble = VotingClassifier(estimators=[('SVC', svc), ('GPC', gpc), ('MLP', mlp)], voting='soft')
+
+scores_ensemble = make_experiment_for_dataset_list(datasets_list, ensemble)
+
+# %%
+
+all_scores = np.transpose([scores_svc, scores_gpc, scores_mlp, scores_ensemble])
+print(all_scores)
+
+# %%
+# 
+
+def round_down(number):
+    math.floor(number * 100)/100.0
+
+    return number
+
+def perform_wilcoxon_test(sample1, sample2):
+    try:
+        stat, pvalue = wilcoxon(sample1, sample2)
+    except ValueError:
+        stat, pvalue = 1.00
+    
+    return round(pvalue, 3)
+
+# %%
+
+p_svc_gpc = perform_wilcoxon_test(scores_svc, scores_gpc)
+p_svc_mlp = perform_wilcoxon_test(scores_svc, scores_mlp)
+p_svc_ensemble = perform_wilcoxon_test(scores_svc, scores_ensemble)
+p_gpc_mlp = perform_wilcoxon_test(scores_gpc, scores_mlp)
+p_gpc_ensemble = perform_wilcoxon_test(scores_gpc, scores_ensemble)
+p_mlp_ensemble = perform_wilcoxon_test(scores_mlp, scores_ensemble)
+
+
+# %%
+
+np.set_printoptions(suppress=True, precision=2)
+
+headers = ['SVC-GPC', 'SVC-MLP', 'GPC-MLP', 'SVC-Ensemble', 'GPC-Ensemble', 'MLP-Ensemble']
+wilcoxon_scores_rows = [
+    [p_svc_gpc, p_svc_mlp, p_gpc_mlp, p_svc_ensemble, p_gpc_ensemble, p_mlp_ensemble]
+]
+scores_table = tabulate(wilcoxon_scores_rows, headers=headers, tablefmt="pretty")
+print(scores_table)
+# %%
