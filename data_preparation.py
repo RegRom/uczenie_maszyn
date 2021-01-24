@@ -21,7 +21,10 @@ def load_datasets_batch(filepath, dataset_names):
     datasets_list = {}
     for dataset in dataset_names:
         print(f'{filepath}{dataset}')
-        dataset_loaded = pd.read_csv(filepath_or_buffer=f'{filepath}{dataset}', skiprows=1, header=None)
+        if('_features_' in dataset):
+            dataset_loaded = pd.read_csv(filepath_or_buffer=f'{filepath}{dataset}', header=None)
+        else:
+            dataset_loaded = pd.read_csv(filepath_or_buffer=f'{filepath}{dataset}', skiprows=1, header=None)
         datasets_list[f'{dataset}'] = dataset_loaded
     
     return datasets_list

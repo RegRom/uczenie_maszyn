@@ -10,35 +10,42 @@ from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import balanced_accuracy_score
 from tqdm import tqdm
-from sklearn.ensemble import VotingClassifier
+from sklearn.ensemble import VotingClassifier, StackingClassifier
 from scipy.stats import wilcoxon
 from tabulate import tabulate
 import math
+from sklearn.linear_model import LogisticRegression
 
 skf = StratifiedKFold(n_splits=5, random_state=444)
 
 # %%
 
-datasets = ['yeast3.csv', 
-    'yeast-2_vs_8.csv', 
-    'yeast-2_vs_4.csv',
-    'yeast-0-5-6-7-9_vs_4.csv',
+datasets = [
+    'glass1.csv',
     'wisconsin.csv',
-    'vehicle1.csv',
-    'vehicle0.csv',
-    'shuttle-c2-vs-c4.csv',
-    'shuttle-c0-vs-c4.csv',
-    'segment0.csv',
-    'page-blocks0.csv',
-    'new-thyroid1.csv',
     'iris0.csv',
     'haberman.csv',
+    'vehicle1.csv',
+    'vehicle0.csv',
+    'new-thyroid1.csv',
+    'segment0.csv',
     'glass6.csv',
-    'glass1.csv',
-    'glass-0-1-6_vs_2.csv',
+    'yeast3.csv', 
     'ecoli3.csv',
+    'page-blocks0.csv',
+    'yeast-2_vs_4.csv',
+    'yeast-0-5-6-7-9_vs_4.csv',
+    'glass-0-1-6_vs_2.csv',
+    'shuttle-c0-vs-c4.csv',
+    'abalone9-18.csv',
+    'shuttle-c2-vs-c4.csv',
+    'yeast-2_vs_8.csv',
+    '11_features_0.035_0.965.csv',
+    '12_features_0.02_0.98.csv',
+    '13_features_0.014_0.986.csv',
+    '14_features_0.011_0.989.csv',
+    '15_features_0.009_0.991.csv', 
     'abalone19.csv',
-    'abalone9-18.csv'
 ]
 
 # %%
@@ -54,15 +61,7 @@ datasets = ['yeast3.csv',
 
 # Wczytanie przekształconych datasetów do słownika
 datasets_list = prep.load_datasets_batch('datasets\\', datasets)
-
-# Dodanie wygenerowanych zbiorów danych do słownika
-datasets_list['generated1'] = pd.read_csv('datasets\\11_features_0.035_0.965.csv')
-datasets_list['generated2'] = pd.read_csv('datasets\\12_features_0.02_0.98.csv')
-datasets_list['generated3'] = pd.read_csv('datasets\\13_features_0.014_0.986.csv')
-datasets_list['generated4'] = pd.read_csv('datasets\\14_features_0.011_0.989.csv')
-datasets_list['generated5'] = pd.read_csv('datasets\\15_features_0.009_0.991.csv')
-
-# prep.change_labels_to_numeric('datasets\\yeast3.csv')
+print(datasets_list.keys())
 
 # %%
 # Funkcja przeprowadzająca eksperyment dla danego zbioru danych i klasyfikatora
@@ -112,16 +111,23 @@ scores_mlp = make_experiment_for_dataset_list(datasets_list, mlp)
 # %%
 # Utworzenie i wytrenowanie komitetu klasyfikatorów z głosowaniem twardym
 
-ensemble = VotingClassifier(estimators=[('SVC', svc), ('GPC', gpc), ('MLP', mlp)], voting='hard')
+ensemble_voting = VotingClassifier(estimators=[('SVC', svc), ('GPC', gpc), ('MLP', mlp)], voting='hard')
 
-scores_ensemble = make_experiment_for_dataset_list(datasets_list, ensemble)
+scores_ensemble = make_experiment_for_dataset_list(datasets_list, ensemble_voting)
 
 # %%
 # Utworzenie i wytrenowanie komitetu klasyfikatorów z głosowaniem miękkim
 
-ensemble = VotingClassifier(estimators=[('SVC', svc), ('GPC', gpc), ('MLP', mlp)], voting='soft')
+# ensemble = VotingClassifier(estimators=[('SVC', svc), ('GPC', gpc), ('MLP', mlp)], voting='soft')
 
-scores_ensemble = make_experiment_for_dataset_list(datasets_list, ensemble)
+# scores_soft_ensemble = make_experiment_for_dataset_list(datasets_list, ensemble)
+
+# %%
+# Utworzenie i wytrenowanie komitetu klasyfikatorów typu Stacked
+
+ensemble_stacked = StackingClassifier(estimators=[('SVC', svc), ('GPC', gpc), ('MLP', mlp)], final_estimator=LogisticRegression())
+
+scores_soft_ensemble = make_experiment_for_dataset_list(datasets_list, ensemble_stacked)
 
 # %%
 
@@ -129,7 +135,7 @@ all_scores = np.transpose([scores_svc, scores_gpc, scores_mlp, scores_ensemble])
 print(all_scores)
 
 # %%
-# 
+# Funkcje do przeprowadzania testów Wilcoxona
 
 def round_down(number):
     math.floor(number * 100)/100.0
@@ -145,6 +151,7 @@ def perform_wilcoxon_test(sample1, sample2):
     return round(pvalue, 3)
 
 # %%
+# Przeprowadzanie testu Wilcoxona dla klasyfikatorów
 
 p_svc_gpc = perform_wilcoxon_test(scores_svc, scores_gpc)
 p_svc_mlp = perform_wilcoxon_test(scores_svc, scores_mlp)
@@ -155,6 +162,7 @@ p_mlp_ensemble = perform_wilcoxon_test(scores_mlp, scores_ensemble)
 
 
 # %%
+# Przedstawienie wyników testu Wilcoxona
 
 np.set_printoptions(suppress=True, precision=2)
 
@@ -165,3 +173,4 @@ wilcoxon_scores_rows = [
 scores_table = tabulate(wilcoxon_scores_rows, headers=headers, tablefmt="pretty")
 print(scores_table)
 # %%
+
