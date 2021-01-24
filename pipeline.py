@@ -61,7 +61,6 @@ datasets = [
 
 # Wczytanie przekształconych datasetów do słownika
 datasets_list = prep.load_datasets_batch('datasets\\', datasets)
-print(datasets_list.keys())
 
 # %%
 # Funkcja przeprowadzająca eksperyment dla danego zbioru danych i klasyfikatora
@@ -127,11 +126,11 @@ scores_ensemble = make_experiment_for_dataset_list(datasets_list, ensemble_votin
 
 ensemble_stacked = StackingClassifier(estimators=[('SVC', svc), ('GPC', gpc), ('MLP', mlp)], final_estimator=LogisticRegression())
 
-scores_soft_ensemble = make_experiment_for_dataset_list(datasets_list, ensemble_stacked)
+scores_stacked = make_experiment_for_dataset_list(datasets_list, ensemble_stacked)
 
 # %%
 
-all_scores = np.transpose([scores_svc, scores_gpc, scores_mlp, scores_ensemble])
+all_scores = np.transpose([scores_svc, scores_gpc, scores_mlp, scores_ensemble, scores_stacked])
 print(all_scores)
 
 # %%
@@ -159,18 +158,60 @@ p_svc_ensemble = perform_wilcoxon_test(scores_svc, scores_ensemble)
 p_gpc_mlp = perform_wilcoxon_test(scores_gpc, scores_mlp)
 p_gpc_ensemble = perform_wilcoxon_test(scores_gpc, scores_ensemble)
 p_mlp_ensemble = perform_wilcoxon_test(scores_mlp, scores_ensemble)
+p_gpc_stacking = perform_wilcoxon_test(scores_gpc, scores_stacked)
+p_mlp_stacking = perform_wilcoxon_test(scores_mlp, scores_stacked)
+p_ensemble_stacking = perform_wilcoxon_test(scores_gpc, scores_stacked)
 
 
 # %%
 # Przedstawienie wyników testu Wilcoxona
 
-np.set_printoptions(suppress=True, precision=2)
-
-headers = ['SVC-GPC', 'SVC-MLP', 'GPC-MLP', 'SVC-Ensemble', 'GPC-Ensemble', 'MLP-Ensemble']
+headers = ['SVC-GPC', 'SVC-MLP', 'GPC-MLP', 'SVC-Ensemble', 'GPC-Ensemble', 'MLP-Ensemble', 'SVC-Stacking', 'GPC-Stacking', 'MLP-Stacking']
 wilcoxon_scores_rows = [
-    [p_svc_gpc, p_svc_mlp, p_gpc_mlp, p_svc_ensemble, p_gpc_ensemble, p_mlp_ensemble]
+    [p_svc_gpc, p_svc_mlp, p_gpc_mlp, p_svc_ensemble, p_gpc_ensemble, p_mlp_ensemble, p_gpc_stacking, p_mlp_stacking, p_ensemble_stacking]
 ]
 scores_table = tabulate(wilcoxon_scores_rows, headers=headers, tablefmt="pretty")
 print(scores_table)
+
+# %%
+# Przedstawienie wyników całościowych
+
+dataset_names_trimmed = list({name.replace('.csv', '') for name in datasets})
+
+def round_list_elements(list):
+    newlist = []
+    for item in list:
+        newitem = round(item, 3)
+        newlist.append(newitem)
+    return newlist
+
+final_scores = [
+    dataset_names_trimmed,
+    round_list_elements(scores_svc), 
+    round_list_elements(scores_gpc), 
+    round_list_elements(scores_mlp), 
+    round_list_elements(scores_ensemble), 
+    round_list_elements(scores_stacked),
+]
+final_scores_transposed = np.transpose(final_scores)
+summary_row = [
+        'Average', 
+        round(np.mean(scores_svc), 3), 
+        round(np.mean(scores_gpc), 3), 
+        round(np.mean(scores_mlp), 3), 
+        round(np.mean(scores_ensemble), 3), 
+        round(np.mean(scores_stacked), 3),
+    ]
+
+final_scores_transposed = np.vstack([final_scores_transposed, summary_row])
+print(final_scores_transposed)
+
 # %%
 
+headers = ['Dataset', 'SVC', 'GPC', 'MLP', 'Voting Ensemble', 'Stacking Ensemble']
+scores_rows = final_scores_transposed
+
+scores_table = tabulate(scores_rows, headers=headers, tablefmt="pretty")
+print(scores_table)
+
+# %%
