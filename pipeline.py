@@ -38,6 +38,10 @@ datasets = ['yeast3.csv',
 # Zamiana etykiet tekstowych na liczbowe
 # prep.change_label_for_dataset_batch('datasets\\', datasets)
 
+# Zakodowanie kolumn z wartościami kategorycznymi jako liczbowe
+prep.label_encode_column('Sex', 'datasets\\abalone19.csv')
+prep.label_encode_column('Sex', 'datasets\\abalone9-18.csv')
+
 # %%
 
 # Wczytanie przekształconych datasetów do słownika

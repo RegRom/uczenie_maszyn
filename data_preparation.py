@@ -1,6 +1,7 @@
 from operator import index
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 
 def change_labels_to_numeric(filepath):
     data = pd.read_csv(filepath)
@@ -30,3 +31,11 @@ def data_label_split(dataset):
     y = dataset[:, -1]
 
     return X, y
+
+def label_encode_column(column_label, filepath):
+    data = pd.read_csv(filepath)
+    encoder = LabelEncoder()
+
+    data[f'{column_label}'] = encoder.fit_transform(data[f'{column_label}'])
+
+    data.to_csv(filepath, index=False)
